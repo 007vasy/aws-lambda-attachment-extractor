@@ -10,10 +10,10 @@ print('Loading function')
 
 s3 = boto3.client('s3')
 s3r = boto3.resource('s3')
-outputBucket = "zefix-email-attachments"
+outputBucket = "extracted-zefix-email-pdfs"
 
 pdfDir = "/tmp/output/"
-
+outputPrefix = "test_"
 
 
 def lambda_handler(event, context):
@@ -40,7 +40,11 @@ def lambda_handler(event, context):
             attachment = msg.get_payload()[1]
             
             print(attachment.get_content_type())
-
+            pdf_bytes = attachment.get_payload(decode=True)
+            f = open(pdfDir + 'file.pdf', 'wb')
+            f.write(pdf_bytes)
+            f.close()
+            upload_resulting_files_to_s3()
 
         else:
             print("Could not see file/attachment.")
@@ -51,3 +55,10 @@ def lambda_handler(event, context):
         print(e)
         print('Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.'.format(key, bucket))
         raise e
+
+def upload_resulting_files_to_s3():
+    # Put all XML back into S3 (Covers non-compliant cases if a ZIP contains multiple results)
+    for fileName in os.listdir(pdfDir):
+        if fileName.endswith(".pdf"):
+            print("Uploading: " + fileName)  # File name to upload
+            s3r.meta.client.upload_file(pdfDir+'/'+fileName, outputBucket, outputPrefix+fileName)
