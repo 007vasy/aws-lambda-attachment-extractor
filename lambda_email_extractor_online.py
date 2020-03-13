@@ -62,3 +62,4 @@ def upload_resulting_files_to_s3():
         if fileName.endswith(".pdf"):
             print("Uploading: " + fileName)  # File name to upload
             s3r.meta.client.upload_file(pdfDir+'/'+fileName, outputBucket, outputPrefix+fileName)
+
